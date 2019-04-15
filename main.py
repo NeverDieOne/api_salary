@@ -39,6 +39,16 @@ def get_predict_rub_salary_sj(vacancy):
     return get_predict_salary(vacancy['payment_from'], vacancy['payment_to'])
 
 
+def generate_table(obj, title):
+    table_data = (
+        ('Язык программирования', 'Найдено вакансий', 'Вакансий обработано', 'Средняя зарплата'),
+    )
+    for lang in obj:
+        table_data += (lang, obj[lang]['vacancies_found'], obj[lang]['vacancies_processed'], obj[lang]['average_salary']),
+    table_instance = AsciiTable(table_data, title)
+    print(table_instance.table)
+
+
 result_for_hh = {}
 result_for_sj = {}
 
@@ -105,25 +115,6 @@ for language in LANGUAGES:
         result_for_sj[f'{language}']['average_salary'] = 0
 
 
-TABLE_DATA_SJ = (
-    ('Язык программирования', 'Найдено вакансий', 'Вакансий обработано', 'Средняя зарплата'),
-)
-TABLE_DATA_HH = (
-    ('Язык программирования', 'Найдено вакансий', 'Вакансий обработано', 'Средняя зарплата'),
-)
-
-for lang in result_for_sj:
-    TABLE_DATA_SJ += (lang, result_for_sj[lang]['vacancies_found'], result_for_sj[lang]['vacancies_processed'], result_for_sj[lang]['average_salary']),
-
-for lang in result_for_hh:
-    TABLE_DATA_HH += (lang, result_for_hh[lang]['vacancies_found'], result_for_hh[lang]['vacancies_processed'], result_for_hh[lang]['average_salary']),
-
-
-title_sj = 'SuperJob Moscow'
-table_instance = AsciiTable(TABLE_DATA_SJ, title_sj)
-print(table_instance.table)
-print()
-title_hh = 'HeadHunter Moscow'
-table_instance = AsciiTable(TABLE_DATA_HH, title_hh)
-print(table_instance.table)
+generate_table(result_for_sj, 'SuperJob Moscow')
+generate_table(result_for_hh, 'SuperJob Moscow')
 
