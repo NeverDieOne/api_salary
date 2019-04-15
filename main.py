@@ -1,5 +1,9 @@
 import requests
 from terminaltables import AsciiTable
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 LANGUAGES = [
     'JavaScript',
@@ -80,7 +84,7 @@ for language in LANGUAGES:
         'count': 100
     }
     headers = {
-        'X-Api-App-Id': 'v3.r.129748297.eddb27ef1995ae719289164f33e807d2b80ff9a8.b8bc85c1394dcdd5752a3a9d1383a79e3e1caa75'
+        'X-Api-App-Id': os.getenv('TOKEN')
     }
     language_result_sj = requests.get(api_url_sj, headers=headers, params=params_sj).json()
 
