@@ -37,11 +37,11 @@ def get_predict_rub_salary_sj(vacancy):
     return get_predict_salary(vacancy['payment_from'], vacancy['payment_to'])
 
 
-def generate_table(languages_data, title):
+def print_table(stat_by_language, title):
     table_data = (
         ('Язык программирования', 'Найдено вакансий', 'Вакансий обработано', 'Средняя зарплата'),
     )
-    for name, info in languages_data.items():
+    for name, info in stat_by_language.items():
         table_data += (name, info['vacancies_found'], info['vacancies_processed'], info['average_salary']),
     table_instance = AsciiTable(table_data, title)
     print(table_instance.table)
@@ -120,8 +120,8 @@ def main():
         except ZeroDivisionError:
             result_for_sj[language]['average_salary'] = 0
 
-    generate_table(result_for_sj, 'SuperJob Moscow')
-    generate_table(result_for_hh, 'SuperJob Moscow')
+    print_table(result_for_sj, 'SuperJob Moscow')
+    print_table(result_for_hh, 'SuperJob Moscow')
 
 
 if __name__ == '__main__':
