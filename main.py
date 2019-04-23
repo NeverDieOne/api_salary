@@ -47,83 +47,90 @@ def print_table(stat_by_language, title):
     print(table_instance.table)
 
 
-def main():
-    result_for_hh = {}
-    result_for_sj = {}
-
-    for language in LANGUAGES:
+def get_hh_stat(languages, city_code_for_hh=1, vacancy_period=30):
+    stat_for_hh = {}
+    for language in languages:
+        stat_for_hh[language] = {}
         api_url_hh = 'https://api.hh.ru/vacancies'
-        city_code_for_hh = 1
-        vacancy_period = 30
 
-        params_hh = {
-            'text': f'Программист {language}',
-            'area': city_code_for_hh,
-            'only_with_salary': True,
-            'period': vacancy_period,
-            'page': 1
-        }
-        language_result_hh = requests.get(api_url_hh, params=params_hh).json()
-        pages_number = language_result_hh['pages']
+        language_result_hh = []
+        page = 0
+        pages_number = 1
 
-        while params_hh['page'] <= pages_number:
-            params_hh['page'] += 1
+        while page < pages_number:
+            params_hh = {
+                'text': f'Программист {language}',
+                'area': city_code_for_hh,
+                'only_with_salary': True,
+                'period': vacancy_period,
+                'page': page
+            }
             page_data = requests.get(api_url_hh, params=params_hh).json()
-            language_result_hh['items'] += page_data['items']
+            pages_number = page_data['pages']
+            page += 1
+            language_result_hh += page_data['items']
+            stat_for_hh[language]['vacancies_found'] = page_data['found']
 
-        result_for_hh[language] = {
-            'vacancies_found': language_result_hh['found'],
-            'vacancies_processed': 0
-        }
+        stat_for_hh[language]['vacancies_processed'] = 0
 
         total_salary_for_lang_hh = 0
-        for vacancy in language_result_hh['items']:
+        for vacancy in language_result_hh:
             salary = get_predict_rub_salary_hh(vacancy)
             if salary:
-                result_for_hh[language]['vacancies_processed'] += 1
+                stat_for_hh[language]['vacancies_processed'] += 1
                 total_salary_for_lang_hh += salary
         try:
-            number_of_vacancy = result_for_hh[language]['vacancies_processed']
-            result_for_hh[language]['average_salary'] = int(total_salary_for_lang_hh / number_of_vacancy)
+            number_of_vacancy = stat_for_hh[language]['vacancies_processed']
+            stat_for_hh[language]['average_salary'] = int(total_salary_for_lang_hh / number_of_vacancy)
         except ZeroDivisionError:
-            result_for_hh[language]['average_salary'] = 0
+            stat_for_hh[language]['average_salary'] = 0
+    return stat_for_hh
 
+
+def get_sj_stat(languages, city_code_for_sj=4, vacancy_catalogue_for_sj=48):
+    stat_for_sj = {}
+    for language in languages:
+        stat_for_sj[language] = {}
         api_url_sj = 'https://api.superjob.ru/2.0/vacancies'
-        city_code_for_sj = 4
-        vacancy_catalogue_for_sj = 48
 
-        params_sj = {
-            'keyword': f'Программист {language}',
-            't': city_code_for_sj,
-            'catalogues': vacancy_catalogue_for_sj,
-            'count': 100
-        }
-        headers = {
-            'X-Api-App-Id': os.getenv('TOKEN')
-        }
-        language_result_sj = requests.get(api_url_sj, headers=headers, params=params_sj).json()
+        language_result_sj = []
+        page = 0
+        more_page = True
 
-        result_for_sj[language] = {
-            'vacancies_found': language_result_sj['total'],
-            'vacancies_processed': 0
-        }
+        while more_page:
+            params_sj = {
+                'keyword': f'Программист {language}',
+                't': city_code_for_sj,
+                'catalogues': vacancy_catalogue_for_sj,
+                'count': 100,
+                'page': page
+            }
+            headers = {
+                'X-Api-App-Id': os.getenv('TOKEN')
+            }
+            page_data = requests.get(api_url_sj, headers=headers, params=params_sj).json()
+            more_page = page_data['more']
+            page += 1
+            language_result_sj += page_data['objects']
+            stat_for_sj[language]['vacancies_found'] = page_data['total']
+
+        stat_for_sj[language]['vacancies_processed'] = 0
 
         total_salary_for_lang_sj = 0
-        for vacancy in language_result_sj['objects']:
+        for vacancy in language_result_sj:
             salary = get_predict_rub_salary_sj(vacancy)
             if salary:
-                result_for_sj[language]['vacancies_processed'] += 1
+                stat_for_sj[language]['vacancies_processed'] += 1
                 total_salary_for_lang_sj += salary
         try:
-            number_of_vacancy = result_for_sj[language]['vacancies_processed']
-            result_for_sj[language]['average_salary'] = int(total_salary_for_lang_sj / number_of_vacancy)
+            number_of_vacancy = stat_for_sj[language]['vacancies_processed']
+            stat_for_sj[language]['average_salary'] = int(total_salary_for_lang_sj / number_of_vacancy)
         except ZeroDivisionError:
-            result_for_sj[language]['average_salary'] = 0
-
-    print_table(result_for_sj, 'SuperJob Moscow')
-    print_table(result_for_hh, 'SuperJob Moscow')
+            stat_for_sj[language]['average_salary'] = 0
+    return stat_for_sj
 
 
 if __name__ == '__main__':
     load_dotenv()
-    main()
+    print_table(get_sj_stat(LANGUAGES), 'SuperJob Moscow')
+    print_table(get_hh_stat(LANGUAGES), 'HeadHunter Moscow')
